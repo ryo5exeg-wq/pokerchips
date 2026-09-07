@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d3321">
+<title>ポーカーチップテーブル</title>
+<style>
+  :root{ --felt:#0d3321; --felt2:#124a30; --line:#2c6e4a; --gold:#e8c66a; --red:#ff6b6b; --txt:#f2f7f2; --dim:#9fc4ad; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:"Yu Gothic UI","Hiragino Sans",Meiryo,sans-serif;background:radial-gradient(ellipse at 50% 30%,var(--felt2),var(--felt) 70%);color:var(--txt);touch-action:manipulation;}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px 12px 40px;}
+  button{font-family:inherit;font-weight:bold;border:none;border-radius:12px;cursor:pointer;padding:12px 20px;font-size:16px;color:#fff;background:#1d5c3d;box-shadow:0 3px 0 rgba(0,0,0,.4);}
+  button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4);}
+  button.gold{background:linear-gradient(#f0d081,#c9a23f);color:#3a2c05;}
+  button.red{background:linear-gradient(#e05555,#b02a2a);}
+  button.ghost{background:rgba(255,255,255,.12);}
+  button:disabled{opacity:.35;pointer-events:none;}
+  input{font-family:inherit;font-size:16px;font-weight:bold;color:var(--txt);background:rgba(255,255,255,.1);border:2px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;}
+  .panel{background:rgba(4,20,12,.75);border:2px solid var(--line);border-radius:16px;padding:16px;}
+  .hint{font-size:12px;color:var(--dim);}
+  h1{font-size:24px;color:var(--gold);text-align:center;letter-spacing:.06em;}
+  .center{display:flex;flex-direction:column;align-items:center;gap:14px;}
+
+  /* ---------- テーブル画面 ---------- */
+  #tHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  #tHead .code{font-size:22px;font-weight:bold;color:var(--gold);letter-spacing:.2em;}
+  #potBox{text-align:center;margin:6px 0 12px;}
+  #potBox .lbl{font-size:14px;color:var(--dim);}
+  #potBox .pot{font-size:52px;font-weight:900;color:var(--gold);text-shadow:0 2px 8px rgba(0,0,0,.5);line-height:1.1;}
+  #stTxt{text-align:center;font-size:18px;min-height:26px;margin-bottom:8px;color:#cfe9d8;}
+  #plGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+  .pl{background:rgba(4,20,12,.8);border:2px solid var(--line);border-radius:14px;padding:10px 12px;position:relative;}
+  .pl.turn{border-color:var(--gold);box-shadow:0 0 16px rgba(232,198,106,.55);}
+  .pl.folded{opacity:.45;}
+  .pl .nm{font-size:17px;font-weight:bold;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .pl .stack{font-size:26px;font-weight:900;color:#bdf0d0;}
+  .pl .bet{font-size:14px;color:var(--gold);min-height:18px;}
+  .badge{font-size:11px;font-weight:bold;border-radius:99px;padding:1px 8px;background:#26523a;color:#cfe9d8;}
+  .badge.d{background:var(--gold);color:#3a2c05;}
+  .badge.off{background:#5c2626;color:#ffb9b9;}
+  .badge.ai{background:#7c3aed;color:#fff;}
+  .pl .ops{position:absolute;top:8px;right:8px;}
+  .pl .ops button{padding:4px 10px;font-size:13px;background:rgba(255,255,255,.12);}
+  #tCtrl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
+  #logBox{margin-top:12px;background:rgba(0,0,0,.35);border-radius:10px;padding:8px 12px;font-size:13.5px;line-height:1.8;min-height:40px;}
+  #resultBox{margin-top:10px;}
+  .resCard{background:rgba(232,198,106,.12);border:2px solid var(--gold);border-radius:12px;padding:10px 14px;font-size:16px;}
+  .potRow{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;}
+  .potRow .amt{font-size:18px;font-weight:bold;color:var(--gold);}
+  .potRow .cands{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .potRow .cands button{padding:8px 14px;font-size:15px;background:#26523a;}
+  .potRow .cands button.sel{background:var(--gold);color:#3a2c05;}
+
+  /* QRオーバーレイ */
+  #qrOv{position:fixed;inset:0;background:rgba(2,12,7,.94);z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+  #qrOv .qrbox{background:#fff;border-radius:16px;padding:18px 16px 10px;text-align:center;}
+  #qrOv svg{width:min(70vw,340px);height:min(70vw,340px);display:block;}
+  #qrOv .qs{color:#333;font-size:14px;font-weight:bold;margin-top:6px;}
+  #qrOv .bigcode{font-size:44px;font-weight:900;color:var(--gold);letter-spacing:.25em;}
+
+  /* ---------- スマホ画面 ---------- */
+  #pWrap{max-width:520px;margin:0 auto;}
+  #pStack{text-align:center;margin:10px 0;}
+  #pStack .lbl{font-size:13px;color:var(--dim);}
+  #pStack .v{font-size:56px;font-weight:900;color:#bdf0d0;line-height:1.1;}
+  #pInfo{text-align:center;font-size:16px;margin-bottom:10px;min-height:24px;}
+  #pTurnBar{border-radius:14px;padding:12px;text-align:center;font-size:20px;font-weight:bold;margin-bottom:12px;background:rgba(255,255,255,.08);}
+  #pTurnBar.my{background:linear-gradient(#f0d081,#c9a23f);color:#3a2c05;animation:pulse 1s infinite alternate;}
+  @keyframes pulse{from{filter:brightness(1);}to{filter:brightness(1.18);}}
+  #pBtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  #pBtns button{padding:20px 8px;font-size:20px;border-radius:14px;}
+  #pBtns .wide{grid-column:1/-1;}
+
+  /* モーダル */
+  .modal{position:fixed;inset:0;background:rgba(2,12,7,.9);z-index:70;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:3vh 10px;}
+  .modal.open{display:flex;}
+  .mbox{background:#0f2b1c;border:2px solid var(--line);border-radius:16px;padding:16px;width:min(96vw,860px);}
+  .mbox h3{color:var(--gold);margin-bottom:10px;font-size:18px;}
+  .slotRow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+  .slotRow .who{width:110px;font-size:14px;font-weight:bold;flex:none;}
+  .slot{width:52px;height:68px;border:2px dashed #4b8a66;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;background:rgba(255,255,255,.05);cursor:pointer;flex-direction:column;line-height:1.1;}
+  .slot.sel{border-color:var(--gold);box-shadow:0 0 10px rgba(232,198,106,.6);}
+  .slot.filled{background:#fff;color:#111;border-style:solid;}
+  .slot.filled.red{color:#c0392b;}
+  #cardGrid{display:grid;grid-template-columns:repeat(13,1fr);gap:4px;margin-top:10px;}
+  #cardGrid button{padding:8px 0;font-size:13.5px;border-radius:6px;background:#fff;color:#111;box-shadow:none;font-weight:900;}
+  #cardGrid button.red{color:#c0392b;}
+  #cardGrid button:disabled{opacity:.18;}
+  .suitLbl{font-size:16px;font-weight:900;align-self:center;}
+
+  #toast{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);z-index:90;background:#fff;color:#123;font-size:18px;font-weight:900;border-radius:14px;padding:14px 22px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none;max-width:90vw;text-align:center;}
+  #toast.show{display:block;}
+  #conn{width:10px;height:10px;border-radius:50%;background:#3ddc84;flex:none;}
+  #conn.bad{background:#f2554b;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ===== ロビー ===== -->
+<div id="lobby" class="center" style="padding-top:4vh;">
+  <h1>♠️ ポーカーチップテーブル ♥️</h1>
+  <div class="hint" style="text-align:center;">実物のトランプ × スマホのチップ管理。<br>真ん中にこの画面（PC/タブレット）、各プレイヤーはスマホで参加。</div>
+  <div class="panel" style="width:min(94vw,460px);">
+    <h3 style="color:var(--gold);margin-bottom:10px;">🖥 テーブルをつくる（中央に置く端末で）</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div><label class="hint">SB</label><input id="inSb" type="number" value="50"></div>
+      <div><label class="hint">BB</label><input id="inBb" type="number" value="100"></div>
+      <div><label class="hint">持ち点</label><input id="inStack" type="number" value="10000"></div>
+    </div>
+    <button class="gold" style="width:100%;margin-top:12px;" onclick="createTable()">テーブル開始</button>
+    <div class="hint" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;">
+      📱 プレイヤーはこちら（スマホで）</div>
+    <input id="inName" placeholder="なまえ" maxlength="10" style="margin-top:6px;">
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <input id="inCode" placeholder="コード（4文字）" maxlength="4" style="text-transform:uppercase;">
+      <button onclick="joinTable()" style="flex:none;">参加</button>
+    </div>
+    <div class="hint" style="margin-top:10px;">サーバー（ふつうは変えない)</div>
+    <input id="inSrv" style="font-size:12px;padding:6px 8px;font-weight:normal;">
+  </div>
+  <div id="lobbyErr" class="hint" style="color:#ffb9b9;font-size:14px;"></div>
+  <div class="hint">⚠ チップはゲーム内ポイントです。現金や物と交換する遊び方はしないでください（賭博になります）。</div>
+</div>
+
+<!-- ===== テーブル画面（中央） ===== -->
+<div id="table" style="display:none;">
+  <div id="tHead">
+    <span class="code" id="tCode">----</span>
+    <div id="conn"></div>
+    <button class="ghost" onclick="showQr()">📱 参加QR</button>
+    <span style="flex:1"></span>
+    <span class="hint" id="tBlinds"></span>
+    <button class="ghost" onclick="leaveAll()">終了</button>
+  </div>
+  <div id="potBox"><div class="lbl">ポット</div><div class="pot" id="tPot">0</div></div>
+  <div id="stTxt"></div>
+  <div id="resultBox"></div>
+  <div id="plGrid"></div>
+  <div id="tCtrl"></div>
+  <div id="logBox"></div>
+</div>
+
+<!-- ===== スマホ画面（プレイヤー） ===== -->
+<div id="phone" style="display:none;">
+  <div id="pWrap">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <b id="pName" style="font-size:18px;"></b>
+      <div id="conn2" style="width:9px;height:9px;border-radius:50%;background:#3ddc84;"></div>
+      <span style="flex:1"></span>
+      <span class="hint" id="pCode"></span>
+      <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="leaveAll()">退出</button>
+    </div>
+    <div id="pStack"><div class="lbl">あなたのチップ</div><div class="v" id="pStackV">0</div></div>
+    <div id="pInfo"></div>
+    <div id="pTurnBar">…</div>
+    <div id="pBtns"></div>
+  </div>
+</div>
+</div>
+
+<!-- QRオーバーレイ -->
+<div id="qrOv" onclick="this.style.display='none'">
+  <div class="bigcode" id="qrCode2"></div>
+  <div class="qrbox"><div id="qrBody"></div><div class="qs">スマホのカメラで読んで参加！</div></div>
+  <div class="hint">タップで閉じる</div>
+</div>
+
+<!-- レイズモーダル（スマホ） -->
+<div class="modal" id="mRaise"><div class="mbox" style="max-width:420px;">
+  <h3>レイズ額（合計ベット額）</h3>
+  <input id="raiseTo" type="number" inputmode="numeric" style="font-size:24px;text-align:center;">
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;" id="raisePresets"></div>
+  <div style="display:flex;gap:10px;margin-top:12px;">
+    <button class="gold" style="flex:1;" onclick="sendRaise()">レイズする</button>
+    <button class="ghost" onclick="closeM('mRaise')">やめる</button>
+  </div>
+</div></div>
+
+<!-- カード判定モーダル（テーブル） -->
+<div class="modal" id="mJudge"><div class="mbox">
+  <h3>🃏 カードで勝敗を判定</h3>
+  <div class="hint" style="margin-bottom:8px;">スロットをタップ → 下のカードをタップで入力。もう一度スロットをタップで消去。</div>
+  <div id="judgeSlots"></div>
+  <div id="cardGrid"></div>
+  <div style="display:flex;gap:10px;margin-top:12px;">
+    <button class="gold" style="flex:1;" onclick="sendJudge()">判定して分配する</button>
+    <button class="ghost" onclick="closeM('mJudge')">やめる</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script src="qr.js"></script>
+<script>
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var LSK='pokerchips_v1';
+var DEFAULT_SRV='https://pokerchips-server.ryo5exeg.workers.dev';
+var ST={srv:'',code:'',pid:'',you:-1,isHost:false,view:null,room:null,busy:false,logN:-1};
+var SUITS=['♠','♥','♦','♣'], SUIT_RED={1:true,2:true};
+var RANKS=[14,13,12,11,10,9,8,7,6,5,4,3,2];
+var RJ={14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+
+function saveST(){try{localStorage.setItem(LSK,JSON.stringify({srv:ST.srv,code:ST.code,pid:ST.pid,nm:$('inName').value}));}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function yen(n){return (+n||0).toLocaleString('ja-JP');}
+async function api(path,method,body,qs){
+  var r=await fetch(ST.srv.replace(/\/+$/,'')+path+(qs||''),{method:method||'GET',
+    headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
+  var j=null;try{j=await r.json();}catch(e){}
+  if(!j)throw new Error('サーバーの応答が読めませんでした');
+  return j;
+}
+var toastT=null;
+function toast(m,ms){var t=$('toast');t.textContent=m;t.classList.add('show');if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},ms||1500);}
+
+/* ---------- ロビー ---------- */
+async function createTable(){
+  ST.srv=$('inSrv').value.trim()||DEFAULT_SRV;
+  try{
+    var j=await api('/api/room/create','POST',{sb:+$('inSb').value||50,bb:+$('inBb').value||100,stack:+$('inStack').value||10000});
+    if(!j.ok)throw new Error(j.error||'作れませんでした');
+    ST.code=j.code;ST.pid=j.playerId;ST.you=-1;ST.isHost=true;saveST();
+    show('table');$('tCode').textContent=j.code;showQr();poll();
+  }catch(e){$('lobbyErr').textContent=e.message;}
+}
+async function joinTable(){
+  ST.srv=$('inSrv').value.trim()||DEFAULT_SRV;
+  var code=$('inCode').value.trim().toUpperCase();
+  var name=$('inName').value.trim();
+  if(!name){$('lobbyErr').textContent='なまえを入れてください';return;}
+  if(code.length!==4){$('lobbyErr').textContent='コードは4文字です';return;}
+  try{
+    var j=await api('/api/room/'+code+'/join','POST',{name:name});
+    if(!j.ok)throw new Error(j.error||'入れませんでした');
+    ST.code=code;ST.pid=j.playerId;ST.you=j.seat;ST.isHost=false;saveST();
+    show('phone');$('pCode').textContent='卓 '+code;poll();
+  }catch(e){$('lobbyErr').textContent=e.message;}
+}
+function show(id){['lobby','table','phone'].forEach(function(x){$(x).style.display=(x===id)?'':'none';});}
+function leaveAll(){
+  if(ST.view&&ST.view.phase!=='idle'&&!confirm('ゲーム進行中です。この画面を閉じますか？'))return;
+  localStorage.removeItem(LSK);location.href=location.pathname;
+}
+function showQr(){
+  if(typeof qrcode!=='function')return;
+  var u=location.origin+location.pathname+'?r='+ST.code+(ST.srv!==DEFAULT_SRV?'&s='+encodeURIComponent(ST.srv):'');
+  try{
+    var q=qrcode(0,'M');q.addData(u);q.make();
+    $('qrBody').innerHTML=q.createSvgTag({cellSize:6,margin:3,scalable:true});
+    $('qrCode2').textContent=ST.code;
+    $('qrOv').style.display='flex';
+  }catch(e){}
+}
+function closeM(id){$(id).classList.remove('open');}
+
+/* ---------- ポーリング ---------- */
+var timer=null,fail=0;
+async function poll(){
+  if(timer)clearTimeout(timer);
+  try{
+    var j=await api('/api/room/'+ST.code+'/state','GET',null,'?playerId='+ST.pid);
+    fail=0;$('conn').className='';$('conn2').style.background='#3ddc84';
+    ST.room=j.room;ST.view=j.view;ST.you=j.you;ST.isHost=j.isHost;
+    render();
+  }catch(e){
+    fail++;if(fail>1){$('conn').className='bad';$('conn2').style.background='#f2554b';}
+  }
+  timer=setTimeout(poll,1200);
+}
+async function send(move){
+  if(ST.busy)return;ST.busy=true;
+  try{
+    var j=await api('/api/room/'+ST.code+'/action','POST',{playerId:ST.pid,move:move});
+    if(!j.ok)toast(j.err||'その操作はできません');
+    else if(j.view){ST.view=j.view;render();}
+  }catch(e){toast('通信できませんでした');}
+  ST.busy=false;poll();
+}
+
+/* ---------- 描画 ---------- */
+function connectedOf(seat){
+  var p=(ST.room&&ST.room.players||[]).find(function(x){return x.seat===seat;});
+  return p?p.connected:false;
+}
+function render(){
+  var V=ST.view;if(!V)return;
+  if(ST.isHost)renderTable(V);else renderPhone(V);
+  /* 新着ログをトースト（自分に関係なくテーブルでは全部ログ欄で見える） */
+}
+var STREET_JP=['プリフロップ','フロップ','ターン','リバー'];
+function renderTable(V){
+  $('tPot').textContent=yen(V.pot+V.players.reduce(function(s,p){return s+p.bet;},0));
+  $('tBlinds').textContent='SB '+yen(V.sb)+' / BB '+yen(V.bb)+'　ハンド#'+V.handNo;
+  var st='';
+  if(V.phase==='idle')st=V.players.length<2?'📱 参加QRからプレイヤーを集めよう（2人以上で開始）':'▶ ハンド開始を押して、カードを配ってください';
+  if(V.phase==='hand')st='🎯 '+STREET_JP[V.street]+'　'+(V.turn>=0?esc(V.players[V.turn].name)+' の番':'');
+  if(V.phase==='showdown')st=(V.showdown.allinRush?'🔥 全員オールイン！残りのカードをめくって→ ':'')+'🃏 ショーダウン：勝者を選ぶか「カードで判定」';
+  $('stTxt').innerHTML=st;
+  /* プレイヤー */
+  var h='';
+  V.players.forEach(function(p,i){
+    if(p.out)return;
+    var badges='';
+    if(i===V.dealer&&V.phase!=='idle')badges+='<span class="badge d">D</span>';
+    if(V.phase!=='idle'){
+      if(i===V.sbSeat)badges+='<span class="badge">SB</span>';
+      if(i===V.bbSeat)badges+='<span class="badge">BB</span>';
+    }
+    if(p.allin)badges+='<span class="badge off">ALL IN</span>';
+    if(p.folded)badges+='<span class="badge">フォールド</span>';
+    if(!connectedOf(i))badges+='<span class="badge off">📶切断</span>';
+    var ops='';
+    if(V.phase==='idle'){
+      ops='<button onclick="hostChips('+i+')">💰</button> <button onclick="hostKick('+i+')">🚪</button>';
+    }else if(V.phase==='hand'&&V.turn===i){
+      ops='<button onclick="send({type:\'foldFor\',seat:'+i+'})">代行フォールド</button>';
+    }
+    h+='<div class="pl'+(V.turn===i?' turn':'')+(p.folded?' folded':'')+'">'
+      +'<div class="ops">'+ops+'</div>'
+      +'<div class="nm">'+esc(p.name)+' '+badges+'</div>'
+      +'<div class="stack">'+yen(p.stack)+'</div>'
+      +'<div class="bet">'+(p.bet>0?'ベット中: '+yen(p.bet):'')+'</div>'
+      +'</div>';
+  });
+  $('plGrid').innerHTML=h;
+  /* 結果表示 */
+  var rb='';
+  if(V.lastResult){
+    rb='<div class="resCard">'+esc(V.lastResult.text);
+    if(V.lastResult.detail)rb+='<div class="hint" style="margin-top:4px;">'
+      +V.lastResult.detail.map(function(d){return esc(d.name)+'：'+esc(d.hand);}).join('　／　')+'</div>';
+    rb+='</div>';
+  }
+  $('resultBox').innerHTML=rb;
+  /* コントロール */
+  var c='';
+  if(V.phase==='idle'){
+    c='<button class="gold" style="font-size:20px;padding:16px 40px;" onclick="send({type:\'start\'})" '
+      +(V.players.filter(function(p){return !p.out&&p.stack>0;}).length<2?'disabled':'')+'>▶ ハンド開始</button>';
+  }
+  if(V.phase==='showdown'){
+    c=renderPots(V)+'<div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">'
+      +'<button class="gold" onclick="confirmAward()">この分配で確定</button>'
+      +'<button onclick="openJudge()">🃏 カードで判定</button></div>';
+  }
+  $('tCtrl').innerHTML=c;
+  if(V.phase==='showdown')restorePotSel(V);
+  $('logBox').innerHTML=V.log.map(function(t){return '<div>'+esc(t)+'</div>';}).join('');
+}
+/* ショーダウンの手動勝者選択 */
+var potSel=[];
+function renderPots(V){
+  var pots=V.showdown.pots;
+  if(potSel.length!==pots.length)potSel=pots.map(function(){return [];});
+  var h='';
+  pots.forEach(function(pot,i){
+    h+='<div class="potRow"><span class="amt">'+(pots.length>1?(i===0?'メインポット':'サイドポット'+i):'ポット')+'：'+yen(pot.amount)+'</span>'
+      +'<span class="hint">　勝った人をタップ（チョップは複数選択）</span><div class="cands">';
+    pot.elig.forEach(function(s){
+      h+='<button data-pot="'+i+'" data-seat="'+s+'" onclick="togglePotSel('+i+','+s+',this)">'+esc(V.players[s].name)+'</button>';
+    });
+    h+='</div></div>';
+  });
+  return h;
+}
+function restorePotSel(V){
+  document.querySelectorAll('.potRow .cands button').forEach(function(b){
+    var pi=+b.getAttribute('data-pot'),s=+b.getAttribute('data-seat');
+    b.classList.toggle('sel',potSel[pi]&&potSel[pi].indexOf(s)>=0);
+  });
+}
+function togglePotSel(pi,s,el){
+  var a=potSel[pi]||[];
+  var ix=a.indexOf(s);
+  if(ix>=0)a.splice(ix,1);else a.push(s);
+  potSel[pi]=a;el.classList.toggle('sel');
+}
+function confirmAward(){
+  for(var i=0;i<potSel.length;i++)if(!potSel[i].length){toast('勝者が選ばれていないポットがあります');return;}
+  send({type:'award',winners:potSel});
+  potSel=[];
+}
+function hostChips(seat){
+  var v=prompt(ST.view.players[seat].name+' に追加するチップ数（リバイ）',String(ST.view.initStack));
+  if(v==null)return;
+  send({type:'addChips',seat:seat,amt:Math.floor(+v||0)});
+}
+function hostKick(seat){
+  if(confirm(ST.view.players[seat].name+' を退席させますか？'))send({type:'kick',seat:seat});
+}
+
+/* ---------- カード判定モーダル ---------- */
+var slots=[],selSlot=-1;
+function openJudge(){
+  var V=ST.view;
+  var live=V.players.map(function(p,i){return i;}).filter(function(i){var p=V.players[i];return p.inHand&&!p.folded;});
+  slots=[];
+  for(var b=0;b<5;b++)slots.push({who:'ボード',label:['フロップ1','フロップ2','フロップ3','ターン','リバー'][b],card:null});
+  live.forEach(function(s){
+    slots.push({who:V.players[s].name,seat:s,label:'1枚目',card:null});
+    slots.push({who:V.players[s].name,seat:s,label:'2枚目',card:null});
+  });
+  selSlot=0;
+  renderJudge();
+  $('mJudge').classList.add('open');
+}
+function renderJudge(){
+  var rows={},order=[];
+  slots.forEach(function(sl,i){
+    if(!rows[sl.who]){rows[sl.who]=[];order.push(sl.who);}
+    rows[sl.who].push(i);
+  });
+  var h='';
+  order.forEach(function(who){
+    h+='<div class="slotRow"><div class="who">'+esc(who)+'</div>';
+    rows[who].forEach(function(i){
+      var sl=slots[i];
+      var cls='slot'+(i===selSlot?' sel':'')+(sl.card?' filled'+(SUIT_RED[sl.card.s]?' red':''):'');
+      h+='<div class="'+cls+'" onclick="tapSlot('+i+')">'
+        +(sl.card?('<span>'+SUITS[sl.card.s]+'</span><span>'+RJ[sl.card.r]+'</span>'):'<span style="font-size:10px;color:#7fae92;">'+esc(sl.label)+'</span>')+'</div>';
+    });
+    h+='</div>';
+  });
+  $('judgeSlots').innerHTML=h;
+  var used={};
+  slots.forEach(function(sl){if(sl.card)used[sl.card.r+'-'+sl.card.s]=1;});
+  var g='';
+  for(var s=0;s<4;s++){
+    for(var ri=0;ri<13;ri++){
+      var r=RANKS[ri],dis=used[r+'-'+s]?' disabled':'';
+      g+='<button class="'+(SUIT_RED[s]?'red':'')+'"'+dis+' onclick="tapCard('+r+','+s+')">'+SUITS[s]+RJ[r]+'</button>';
+    }
+  }
+  $('cardGrid').innerHTML=g;
+}
+function tapSlot(i){
+  if(slots[i].card){slots[i].card=null;selSlot=i;}
+  else selSlot=i;
+  renderJudge();
+}
+function tapCard(r,s){
+  if(selSlot<0||selSlot>=slots.length)return;
+  slots[selSlot].card={r:r,s:s};
+  var nx=slots.findIndex(function(sl){return !sl.card;});
+  selSlot=nx;
+  renderJudge();
+}
+function sendJudge(){
+  var board=slots.slice(0,5).map(function(sl){return sl.card;});
+  if(board.some(function(c){return !c;})){toast('ボードの5枚を入力してください');return;}
+  var holes={};
+  for(var i=5;i<slots.length;i++){
+    var sl=slots[i];
+    if(!sl.card){toast(sl.who+' の手札を入力してください');return;}
+    (holes[sl.seat]=holes[sl.seat]||[]).push(sl.card);
+  }
+  closeM('mJudge');
+  potSel=[];
+  send({type:'judge',board:board,holes:holes});
+}
+
+/* ---------- スマホ描画 ---------- */
+function renderPhone(V){
+  if(ST.you<0)return;
+  var me=V.players[ST.you];if(!me)return;
+  $('pName').textContent=me.name;
+  $('pStackV').textContent=yen(me.stack);
+  var totalPot=V.pot+V.players.reduce(function(s,p){return s+p.bet;},0);
+  $('pInfo').innerHTML='ポット '+yen(totalPot)+'　／　SB'+yen(V.sb)+'・BB'+yen(V.bb)
+    +(me.bet>0?'<br>あなたのベット中: '+yen(me.bet):'');
+  var bar=$('pTurnBar'),myTurn=(V.phase==='hand'&&V.turn===ST.you);
+  bar.className=myTurn?'my':'';
+  bar.id='pTurnBar';
+  if(V.phase==='idle')bar.textContent=V.lastResult?V.lastResult.text:'ハンド開始を待っています…';
+  else if(V.phase==='showdown')bar.textContent='🃏 ショーダウン！テーブル画面で分配中';
+  else if(me.folded)bar.textContent='フォールド中…次のハンドまで待ってね';
+  else if(me.allin)bar.textContent='🔥 オールイン！結果を待とう';
+  else if(myTurn){bar.textContent='あなたの番！';if(navigator.vibrate&&!renderPhone._v){navigator.vibrate(200);renderPhone._v=true;}}
+  else{bar.textContent=(V.turn>=0?V.players[V.turn].name+' の番…':'…');renderPhone._v=false;}
+  if(!myTurn)renderPhone._v=false;
+  var h='';
+  if(myTurn){
+    var tc=V.toCall||0;
+    if(tc<=0)h+='<button class="gold" onclick="send({type:\'check\'})">✋ チェック</button>';
+    else h+='<button class="gold" onclick="send({type:\'call\'})">📞 コール '+yen(tc)+'</button>';
+    h+='<button onclick="openRaise()">📢 レイズ</button>';
+    h+='<button class="red" onclick="if(confirm(\'フォールドしますか？\'))send({type:\'fold\'})">🙅 フォールド</button>';
+    h+='<button class="red" onclick="if(confirm(\'オールイン！本当に？\'))send({type:\'allin\'})">🔥 オールイン</button>';
+  }
+  $('pBtns').innerHTML=h;
+}
+function openRaise(){
+  var V=ST.view,me=V.players[ST.you];
+  var minTo=V.currentBet+V.minRaise, maxTo=me.bet+me.stack;
+  var totalPot=V.pot+V.players.reduce(function(s,p){return s+p.bet;},0);
+  $('raiseTo').value=Math.min(minTo,maxTo);
+  var pres=[['最低 '+yen(Math.min(minTo,maxTo)),Math.min(minTo,maxTo)],
+            ['ポット '+yen(Math.min(totalPot+V.currentBet,maxTo)),Math.min(totalPot+V.currentBet,maxTo)],
+            ['オールイン '+yen(maxTo),maxTo]];
+  $('raisePresets').innerHTML=pres.map(function(p){return '<button class="ghost" onclick="$(\'raiseTo\').value='+p[1]+'">'+p[0]+'</button>';}).join('');
+  $('mRaise').classList.add('open');
+}
+function sendRaise(){
+  closeM('mRaise');
+  send({type:'raise',to:Math.floor(+$('raiseTo').value||0)});
+}
+
+/* ---------- 起動 ---------- */
+(function init(){
+  var saved={};try{saved=JSON.parse(localStorage.getItem(LSK))||{};}catch(e){}
+  var q=new URLSearchParams(location.search);
+  var joinCode=(q.get('r')||'').toUpperCase();
+  $('inSrv').value=q.get('s')||saved.srv||DEFAULT_SRV;
+  if(joinCode)$('inCode').value=joinCode;
+  $('inName').value=joinCode?'':(saved.nm||'');
+  if(saved.srv&&saved.code&&saved.pid&&(!joinCode||joinCode===saved.code)){
+    ST.srv=saved.srv;ST.code=saved.code;ST.pid=saved.pid;
+    /* 役割はstateのisHostで判定して復帰 */
+    api('/api/room/'+ST.code+'/state','GET',null,'?playerId='+ST.pid).then(function(j){
+      if(!j.ok||!j.view){localStorage.removeItem(LSK);return;}
+      ST.isHost=j.isHost;ST.you=j.you;ST.room=j.room;ST.view=j.view;
+      if(j.isHost){show('table');$('tCode').textContent=ST.code;}
+      else{show('phone');$('pCode').textContent='卓 '+ST.code;}
+      render();poll();
+    }).catch(function(){});
+  }
+})();
+</script>
+</body>
+</html>
