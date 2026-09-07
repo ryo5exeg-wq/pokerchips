@@ -9,7 +9,16 @@
   :root{ --felt:#0d3321; --felt2:#124a30; --line:#2c6e4a; --gold:#e8c66a; --red:#ff6b6b; --txt:#f2f7f2; --dim:#9fc4ad; }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
-  body{font-family:"Yu Gothic UI","Hiragino Sans",Meiryo,sans-serif;background:radial-gradient(ellipse at 50% 30%,var(--felt2),var(--felt) 70%);color:var(--txt);touch-action:manipulation;}
+  body{font-family:"Yu Gothic UI","Hiragino Sans",Meiryo,sans-serif;background:var(--felt);color:var(--txt);touch-action:manipulation;}
+  /* 背景画像（読み込めない時はグラデーションのまま） */
+  body::before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 50% 30%,var(--felt2),var(--felt) 70%);}
+  body.bgT::before{background:url(assets/bg_table.jpg) center/cover no-repeat,radial-gradient(ellipse at 50% 30%,var(--felt2),var(--felt) 70%);}
+  body.bgP::before{background:url(assets/bg_phone.jpg) center/cover no-repeat,radial-gradient(ellipse at 50% 30%,var(--felt2),var(--felt) 70%);}
+  .chip20{width:20px;height:20px;vertical-align:-3px;margin-right:5px;}
+  .chip36{width:38px;height:38px;vertical-align:-4px;margin-right:8px;}
+  .chipRow{display:flex;gap:10px;justify-content:center;}
+  .chipRow img{width:30px;height:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+  #logoImg{width:min(92vw,560px);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);display:block;}
   .wrap{max-width:1100px;margin:0 auto;padding:14px 12px 40px;}
   button{font-family:inherit;font-weight:bold;border:none;border-radius:12px;cursor:pointer;padding:12px 20px;font-size:16px;color:#fff;background:#1d5c3d;box-shadow:0 3px 0 rgba(0,0,0,.4);}
   button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4);}
@@ -96,12 +105,17 @@
   #conn.bad{background:#f2554b;}
 </style>
 </head>
-<body>
+<body class="bgT">
 <div class="wrap">
 
 <!-- ===== ロビー ===== -->
 <div id="lobby" class="center" style="padding-top:4vh;">
-  <h1>♠️ ポーカーチップテーブル ♥️</h1>
+  <img id="logoImg" src="assets/logo.jpg" alt="ポーカーチップテーブル"
+    onerror="this.style.display='none';document.getElementById('h1Fallback').style.display='block';">
+  <h1 id="h1Fallback" style="display:none;">♠️ ポーカーチップテーブル ♥️</h1>
+  <div class="chipRow">
+    <img src="assets/chip_white.png" alt=""><img src="assets/chip_red.png" alt=""><img src="assets/chip_green.png" alt=""><img src="assets/chip_blue.png" alt=""><img src="assets/chip_black.png" alt="">
+  </div>
   <div class="hint" style="text-align:center;">実物のトランプ × スマホのチップ管理。<br>真ん中にこの画面（PC/タブレット）、各プレイヤーはスマホで参加。</div>
   <div class="panel" style="width:min(94vw,460px);">
     <h3 style="color:var(--gold);margin-bottom:10px;">🖥 テーブルをつくる（中央に置く端末で）</h3>
@@ -135,7 +149,7 @@
     <span class="hint" id="tBlinds"></span>
     <button class="ghost" onclick="leaveAll()">終了</button>
   </div>
-  <div id="potBox"><div class="lbl">ポット</div><div class="pot" id="tPot">0</div></div>
+  <div id="potBox"><div class="lbl">ポット</div><div class="pot"><img class="chip36" src="assets/chip_red.png" alt="" onerror="this.style.display='none'"><span id="tPot">0</span></div></div>
   <div id="stTxt"></div>
   <div id="resultBox"></div>
   <div id="plGrid"></div>
@@ -153,7 +167,7 @@
       <span class="hint" id="pCode"></span>
       <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="leaveAll()">退出</button>
     </div>
-    <div id="pStack"><div class="lbl">あなたのチップ</div><div class="v" id="pStackV">0</div></div>
+    <div id="pStack"><div class="lbl">あなたのチップ</div><div class="v"><img class="chip36" src="assets/chip_blue.png" alt="" onerror="this.style.display='none'"><span id="pStackV">0</span></div></div>
     <div id="pInfo"></div>
     <div id="pTurnBar">…</div>
     <div id="pBtns"></div>
@@ -240,7 +254,7 @@ async function joinTable(){
     show('phone');$('pCode').textContent='卓 '+code;poll();
   }catch(e){$('lobbyErr').textContent=e.message;}
 }
-function show(id){['lobby','table','phone'].forEach(function(x){$(x).style.display=(x===id)?'':'none';});}
+function show(id){['lobby','table','phone'].forEach(function(x){$(x).style.display=(x===id)?'':'none';});document.body.className=(id==='phone')?'bgP':'bgT';}
 function leaveAll(){
   if(ST.view&&ST.view.phase!=='idle'&&!confirm('ゲーム進行中です。この画面を閉じますか？'))return;
   localStorage.removeItem(LSK);location.href=location.pathname;
@@ -322,7 +336,7 @@ function renderTable(V){
     h+='<div class="pl'+(V.turn===i?' turn':'')+(p.folded?' folded':'')+'">'
       +'<div class="ops">'+ops+'</div>'
       +'<div class="nm">'+esc(p.name)+' '+badges+'</div>'
-      +'<div class="stack">'+yen(p.stack)+'</div>'
+      +'<div class="stack"><img class="chip20" src="assets/chip_white.png" alt="" onerror="this.style.display=\'none\'">'+yen(p.stack)+'</div>'
       +'<div class="bet">'+(p.bet>0?'ベット中: '+yen(p.bet):'')+'</div>'
       +'</div>';
   });
