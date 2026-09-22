@@ -196,6 +196,7 @@
       <div id="conn2" style="width:9px;height:9px;border-radius:50%;background:#3ddc84;"></div>
       <span style="flex:1"></span>
       <span class="hint" id="pCode"></span>
+      <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="openM('mCheat')">📖 早見表</button>
       <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="leaveAll()">退出</button>
     </div>
     <div id="pStack"><div class="lbl">あなたのチップ</div><div class="v"><img class="chip36" src="assets/chip_blue.png" alt="" onerror="this.style.display='none'"><span id="pStackV">0</span></div></div>
@@ -214,6 +215,7 @@
       <div id="conn3" style="width:9px;height:9px;border-radius:50%;background:#3ddc84;"></div>
       <span style="flex:1"></span>
       <span class="hint" id="dCode"></span>
+      <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="openM('mCheat')">📖 早見表</button>
       <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="leaveAll()">退出</button>
     </div>
     <div id="dNow" class="wait"><div class="k">いまやること</div><div class="t">テーブルにつなぐ…</div><div class="s"></div></div>
@@ -278,6 +280,16 @@
     <button class="gold" style="flex:1;" onclick="sendJudge()">判定して分配する</button>
     <button class="ghost" onclick="closeM('mJudge')">やめる</button>
   </div>
+</div></div>
+
+<!-- 初心者向け早見表（役の強さ・アクション）。画像は assets/cheatsheet.webp -->
+<div class="modal" id="mCheat" onclick="if(event.target===this)closeM('mCheat')"><div class="mbox" style="max-width:720px;padding:10px;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+    <b style="font-size:16px;">📖 初心者向け ポーカー早見表</b><span style="flex:1"></span>
+    <button class="ghost" style="padding:6px 14px;font-size:14px;" onclick="closeM('mCheat')">閉じる</button>
+  </div>
+  <img src="assets/cheatsheet.webp" alt="ポーカーの役（強い順）とターンごとのアクションの早見表" loading="lazy" style="display:block;width:100%;height:auto;border-radius:10px;background:#fff;">
+  <div class="hint" style="margin-top:6px;">役が同じときは、より強いカードの組み合わせで勝負。迷ったらコールかフォールド。</div>
 </div></div>
 
 <div id="toast"></div>
@@ -358,6 +370,7 @@ function showQr(){
   }catch(e){}
 }
 function closeM(id){$(id).classList.remove('open');}
+function openM(id){$(id).classList.add('open');}
 
 /* ---------- ポーリング ---------- */
 var timer=null,fail=0;
