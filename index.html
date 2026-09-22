@@ -99,6 +99,30 @@
   #cardGrid button:disabled{opacity:.18;}
   .suitLbl{font-size:16px;font-weight:900;align-self:center;}
 
+  /* ---------- ディーラー画面（進行係・スマホ） ---------- */
+  #dWrap{max-width:560px;margin:0 auto;}
+  #dNow{border-radius:16px;padding:14px 14px 12px;margin:10px 0;background:linear-gradient(#f0d081,#c9a23f);color:#3a2c05;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  #dNow .k{font-size:12px;font-weight:bold;letter-spacing:.1em;opacity:.8;}
+  #dNow .t{font-size:21px;font-weight:900;line-height:1.35;margin:4px 0 6px;}
+  #dNow .s{font-size:14.5px;line-height:1.6;}
+  #dNow.wait{background:rgba(255,255,255,.1);color:var(--txt);}
+  #dNow.hot{animation:pulse 1s infinite alternate;}
+  .dRow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;}
+  .dRow .b{background:rgba(4,20,12,.75);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:14px;flex:1;min-width:120px;}
+  .dRow .b b{display:block;font-size:17px;color:var(--gold);}
+  #dSeats{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .ds{display:flex;align-items:center;gap:8px;background:rgba(4,20,12,.7);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:15px;}
+  .ds.turn{border-color:var(--gold);box-shadow:0 0 12px rgba(232,198,106,.5);}
+  .ds.folded{opacity:.4;}
+  .ds .nm{font-weight:bold;flex:1;}
+  .ds .st{color:#bdf0d0;font-weight:bold;}
+  .ds .bt{color:var(--gold);font-size:13px;min-width:60px;text-align:right;}
+  details.dHelp{margin-top:12px;background:rgba(4,20,12,.75);border:1px solid var(--line);border-radius:14px;padding:10px 14px;}
+  details.dHelp summary{cursor:pointer;font-weight:bold;color:var(--gold);font-size:16px;list-style:none;}
+  details.dHelp summary::before{content:'▶ ';font-size:12px;}details.dHelp[open] summary::before{content:'▼ ';}
+  details.dHelp h4{color:var(--gold);font-size:14px;margin:12px 0 4px;}
+  details.dHelp ol,details.dHelp ul{padding-left:1.3em;font-size:14px;line-height:1.75;}
+  details.dHelp li b{color:#fff;}
   #toast{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);z-index:90;background:#fff;color:#123;font-size:18px;font-weight:900;border-radius:14px;padding:14px 22px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none;max-width:90vw;text-align:center;}
   #toast.show{display:block;}
   #conn{width:10px;height:10px;border-radius:50%;background:#3ddc84;flex:none;}
@@ -132,6 +156,12 @@
     <div style="display:flex;gap:8px;margin-top:8px;">
       <input id="inCode" placeholder="コード（4文字）" maxlength="4" style="text-transform:uppercase;">
       <button onclick="joinTable()" style="flex:none;">参加</button>
+    </div>
+    <div class="hint" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;">
+      🎩 ディーラー（進行係）はこちら（席には座らず、配り方や手順を見る画面）</div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <input id="inCodeD" placeholder="コード（4文字）" maxlength="4" style="text-transform:uppercase;">
+      <button onclick="joinDealer()" style="flex:none;">ディーラーで入る</button>
     </div>
     <div class="hint" style="margin-top:10px;">サーバー（ふつうは変えない)</div>
     <input id="inSrv" style="font-size:12px;padding:6px 8px;font-weight:normal;">
@@ -176,6 +206,50 @@
 </div>
 </div>
 
+<!-- ===== ディーラー画面（進行係） ===== -->
+<div id="dealer" style="display:none;">
+  <div id="dWrap">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <b style="font-size:18px;">🎩 ディーラー</b>
+      <div id="conn3" style="width:9px;height:9px;border-radius:50%;background:#3ddc84;"></div>
+      <span style="flex:1"></span>
+      <span class="hint" id="dCode"></span>
+      <button class="ghost" style="padding:6px 12px;font-size:13px;" onclick="leaveAll()">退出</button>
+    </div>
+    <div id="dNow" class="wait"><div class="k">いまやること</div><div class="t">テーブルにつなぐ…</div><div class="s"></div></div>
+    <div class="dRow" id="dInfo"></div>
+    <div id="dSeats"></div>
+    <details class="dHelp" id="dHelp">
+      <summary>📖 手順のおさらい（迷ったらここ）</summary>
+      <h4>ハンドの流れ</h4>
+      <ol>
+        <li><b>テーブル画面で「▶ハンド開始」</b>を押してもらう（ブラインドは自動で引かれます）。</li>
+        <li><b>配る</b>：カードをよく切り、Dの左隣（SBの人）から時計回りに、裏向きで<b>1枚ずつ2周</b>（1人2枚）。</li>
+        <li><b>プリフロップ</b>：BBの左隣の人から順にスマホでベット。全員そろうと画面が次に進みます。</li>
+        <li><b>フロップ</b>：山札の一番上を1枚伏せて捨て（バーン）、<b>3枚</b>を表向きに並べる。</li>
+        <li><b>ターン</b>：バーン1枚 → <b>1枚</b>めくる。</li>
+        <li><b>リバー</b>：バーン1枚 → <b>1枚</b>めくる。</li>
+        <li><b>ショーダウン</b>：残った人が手札を公開。テーブル画面で<b>勝者をタップ</b>するか、<b>🃏カードで判定</b>（手札とボードを入力すると役と分配が自動）。</li>
+        <li>カードを回収してよく切る。次の「▶ハンド開始」でDが左隣に移ります。</li>
+      </ol>
+      <h4>途中で全員オールインになったら</h4>
+      <ul>
+        <li>ベットは終わり。<b>場が5枚になるまで</b>、バーンをはさみながら残りをめくる。</li>
+        <li>サイドポット（誰がどのポットを取れるか）は画面が自動で計算します。</li>
+      </ul>
+      <h4>迷いやすいところ</h4>
+      <ul>
+        <li><b>2人だけのとき</b>：Dの人がSBを出し、Dから先に配ります。プリフロップはDから、フロップ以降はもう1人から動きます。</li>
+        <li><b>配りまちがい</b>（枚数が違う・表が見えた）：全部回収してもう一度切り、テーブル画面のログどおりの人から配り直す。チップの状態はそのまま。</li>
+        <li><b>誰の番か分からない</b>：この画面の「いまの番」と、テーブル画面の光っている枠を見る。</li>
+        <li><b>離席・電池切れ</b>：テーブル画面の「代行フォールド」で降ろせます。復帰は同じスマホで開き直せばOK。</li>
+        <li><b>チップが足りない人</b>：テーブル画面の「💰リバイ」で足せます（持ち点＝ゲーム内ポイント。現金・物との交換はしない）。</li>
+        <li><b>用語</b>：チェック＝賭けずにパス／コール＝同額を出す／レイズ＝上乗せ／フォールド＝降りる／オールイン＝全部賭ける。</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
 <!-- QRオーバーレイ -->
 <div id="qrOv" onclick="this.style.display='none'">
   <div class="bigcode" id="qrCode2"></div>
@@ -214,12 +288,12 @@
 var $=function(id){return document.getElementById(id);};
 var LSK='pokerchips_v1';
 var DEFAULT_SRV='https://pokerchips-server.ryo5exeg.workers.dev';
-var ST={srv:'',code:'',pid:'',you:-1,isHost:false,view:null,room:null,busy:false,logN:-1};
+var ST={srv:'',code:'',pid:'',you:-1,isHost:false,role:'',view:null,room:null,busy:false,logN:-1};   /* role: ''=通常 / 'dealer'=進行係（席なし・閲覧のみ） */
 var SUITS=['♠','♥','♦','♣'], SUIT_RED={1:true,2:true};
 var RANKS=[14,13,12,11,10,9,8,7,6,5,4,3,2];
 var RJ={14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
 
-function saveST(){try{localStorage.setItem(LSK,JSON.stringify({srv:ST.srv,code:ST.code,pid:ST.pid,nm:$('inName').value}));}catch(e){}}
+function saveST(){try{localStorage.setItem(LSK,JSON.stringify({srv:ST.srv,code:ST.code,pid:ST.pid,role:ST.role,nm:$('inName').value}));}catch(e){}}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function yen(n){return (+n||0).toLocaleString('ja-JP');}
 async function api(path,method,body,qs){
@@ -255,7 +329,20 @@ async function joinTable(){
     show('phone');$('pCode').textContent='卓 '+code;poll();
   }catch(e){$('lobbyErr').textContent=e.message;}
 }
-function show(id){['lobby','table','phone'].forEach(function(x){$(x).style.display=(x===id)?'':'none';});document.body.className=(id==='phone')?'bgP':'bgT';}
+function show(id){['lobby','table','phone','dealer'].forEach(function(x){$(x).style.display=(x===id)?'':'none';});document.body.className=(id==='phone'||id==='dealer')?'bgP':'bgT';}
+/* ディーラー（進行係）として入る：席は取らない。サーバーは未登録IDでも公開情報（view）を返すので、閲覧専用で使える */
+async function joinDealer(){
+  ST.srv=$('inSrv').value.trim()||DEFAULT_SRV;
+  var code=$('inCodeD').value.trim().toUpperCase();
+  if(code.length!==4){$('lobbyErr').textContent='コードは4文字です';return;}
+  try{
+    var pid='dealer-'+Math.random().toString(36).slice(2,8);
+    var j=await api('/api/room/'+code+'/state','GET',null,'?playerId='+pid);
+    if(!j.ok||!j.view)throw new Error(j.error||'テーブルが見つかりません');
+    ST.code=code;ST.pid=pid;ST.you=-1;ST.isHost=false;ST.role='dealer';saveST();
+    show('dealer');$('dCode').textContent='卓 '+code;poll();
+  }catch(e){$('lobbyErr').textContent=e.message;}
+}
 function leaveAll(){
   if(ST.view&&ST.view.phase!=='idle'&&!confirm('ゲーム進行中です。この画面を閉じますか？'))return;
   localStorage.removeItem(LSK);location.href=location.pathname;
@@ -278,11 +365,11 @@ async function poll(){
   if(timer)clearTimeout(timer);
   try{
     var j=await api('/api/room/'+ST.code+'/state','GET',null,'?playerId='+ST.pid);
-    fail=0;$('conn').className='';$('conn2').style.background='#3ddc84';
+    fail=0;$('conn').className='';$('conn2').style.background='#3ddc84';$('conn3').style.background='#3ddc84';
     ST.room=j.room;ST.view=j.view;ST.you=j.you;ST.isHost=j.isHost;
     render();
   }catch(e){
-    fail++;if(fail>1){$('conn').className='bad';$('conn2').style.background='#f2554b';}
+    fail++;if(fail>1){$('conn').className='bad';$('conn2').style.background='#f2554b';$('conn3').style.background='#f2554b';}
   }
   timer=setTimeout(poll,1200);
 }
@@ -303,7 +390,7 @@ function connectedOf(seat){
 }
 function render(){
   var V=ST.view;if(!V)return;
-  if(ST.isHost)renderTable(V);else renderPhone(V);
+  if(ST.role==='dealer')renderDealer(V);else if(ST.isHost)renderTable(V);else renderPhone(V);
   /* 新着ログをトースト（自分に関係なくテーブルでは全部ログ欄で見える） */
 }
 var STREET_JP=['プリフロップ','フロップ','ターン','リバー'];
@@ -508,6 +595,52 @@ function renderPhone(V){
   }
   $('pBtns').innerHTML=h;
 }
+/* ---------- ディーラー画面の描画 ---------- */
+function nextInHand(V,from){var n=V.players.length;for(var k=1;k<=n;k++){var i=(from+k)%n;if(V.players[i].inHand)return i;}return -1;}
+function renderDealer(V){
+  var P=V.players,n=P.length;
+  var inHand=P.map(function(p,i){return i;}).filter(function(i){return P[i].inHand;});
+  var live=P.map(function(p,i){return i;}).filter(function(i){return P[i].inHand&&!P[i].folded;});
+  var nm=function(i){return (i>=0&&P[i])?esc(P[i].name):'—';};
+  var totalPot=V.pot+P.reduce(function(s,p){return s+p.bet;},0);
+  var D=V.dealer, sbS=-1, bbS=-1;
+  if(D>=0&&inHand.length>=2){ if(inHand.length===2){sbS=D;bbS=nextInHand(V,D);} else {sbS=nextInHand(V,D);bbS=nextInHand(V,sbS);} }
+  var box=$('dNow'),k='いまやること',title='',sub='',cls='';
+  if(n<2){title='プレイヤーを待っています';sub='各自がスマホで参加したら、テーブル画面で「▶ハンド開始」。';cls='wait';}
+  else if(V.phase==='idle'){
+    if(V.handNo===0){title='開始前の準備';sub='カードをよく切る → テーブル画面で<b>「▶ハンド開始」</b>を押してもらう。最初のDは自動で決まります。';cls='wait';}
+    else{title='カードを回収してシャッフル';sub=(V.lastResult&&V.lastResult.text?'前のハンド：'+esc(V.lastResult.text)+'<br>':'')+'次は テーブル画面で<b>「▶ハンド開始」</b>。Dは左隣に移ります。';cls='wait';}
+  }
+  else if(V.phase==='showdown'){
+    if(V.showdown&&V.showdown.allinRush){title='残りのカードをめくる';sub='ベットは終了。<b>場が5枚になるまで</b>、バーン1枚 → 1枚めくる、をくり返す。そのあと手札を公開。';cls='hot';}
+    else{title='ショーダウン：手札を公開';sub='残っている人：<b>'+live.map(nm).join('・')+'</b><br>テーブル画面で<b>勝者をタップ</b>、または<b>🃏カードで判定</b>。';cls='hot';}
+    if(V.showdown&&V.showdown.pots&&V.showdown.pots.length>1){sub+='<br>ポットは'+V.showdown.pots.length+'つ（サイドポットあり・画面が自動計算）。';}
+  }
+  else{ /* hand */
+    var noBetsYet=(V.street===0&&P.every(function(p,i){return !p.acted;}));
+    var turnTxt=(V.turn>=0)?'いまの番：<b>'+nm(V.turn)+'</b>'+(V.currentBet>P[V.turn].bet?'（コール額 '+yen(Math.min(V.currentBet-P[V.turn].bet,P[V.turn].stack))+'）':'（チェックできます）'):'';
+    if(V.street===0){
+      title=noBetsYet?'カードを2枚ずつ配る':'プリフロップ：ベット中';
+      sub='<b>'+nm(sbS)+'</b>（SB）から時計回りに、裏向きで<b>1枚ずつ2周</b>。D＝'+nm(D)+'／SB '+yen(V.sb)+'＝'+nm(sbS)+'／BB '+yen(V.bb)+'＝'+nm(bbS)+'（自動で引かれています）<br>'+turnTxt;
+      cls=noBetsYet?'hot':'';
+    }else{
+      var names=['','フロップ','ターン','リバー'],cnt=['','3枚','1枚','1枚'];
+      title=names[V.street]+'：'+(V.street===1?'バーン1枚 → 場に3枚':'バーン1枚 → 場に1枚');
+      sub='山札の一番上を伏せて捨て（バーン）、<b>'+cnt[V.street]+'</b>を表向きに。'+(V.street===1?'場は3枚':V.street===2?'場は4枚':'場は5枚')+'になります。<br>'+turnTxt;
+      /* そのストリートでまだ誰も動いていない＝配る直後なので強調 */
+      cls=P.every(function(p){return !p.acted||p.folded||!p.inHand;})?'hot':'';
+    }
+  }
+  box.className=cls;box.innerHTML='<div class="k">'+k+'</div><div class="t">'+title+'</div><div class="s">'+sub+'</div>';
+  var stName=(V.phase==='hand')?['プリフロップ','フロップ','ターン','リバー'][V.street]:(V.phase==='showdown'?'ショーダウン':'ハンド間');
+  $('dInfo').innerHTML='<div class="b">ハンド<b>#'+V.handNo+'</b></div><div class="b">状況<b>'+stName+'</b></div><div class="b">ポット合計<b>'+yen(totalPot)+'</b></div><div class="b">ブラインド<b>'+yen(V.sb)+' / '+yen(V.bb)+'</b></div>';
+  $('dSeats').innerHTML=P.map(function(p,i){
+    var badges='';if(i===D)badges+='<span class="badge d">D</span>';if(i===sbS&&V.phase!=='idle')badges+='<span class="badge">SB</span>';if(i===bbS&&V.phase!=='idle')badges+='<span class="badge">BB</span>';
+    if(p.out)badges+='<span class="badge off">退席</span>';else if(!connectedOf(i))badges+='<span class="badge off">通信なし</span>';
+    var state=p.folded?'フォールド':(p.allin?'オールイン':'');
+    return '<div class="ds'+(V.phase==='hand'&&V.turn===i?' turn':'')+(p.folded||p.out?' folded':'')+'"><span class="nm">'+esc(p.name)+' '+badges+'</span><span class="hint">'+state+'</span><span class="bt">'+(p.bet>0?'ベット '+yen(p.bet):'')+'</span><span class="st">'+yen(p.stack)+'</span></div>';
+  }).join('');
+}
 function openRaise(){
   var V=ST.view,me=V.players[ST.you];
   var minTo=V.currentBet+V.minRaise, maxTo=me.bet+me.stack;
@@ -537,8 +670,9 @@ function sendRaise(){
     /* 役割はstateのisHostで判定して復帰 */
     api('/api/room/'+ST.code+'/state','GET',null,'?playerId='+ST.pid).then(function(j){
       if(!j.ok||!j.view){localStorage.removeItem(LSK);return;}
-      ST.isHost=j.isHost;ST.you=j.you;ST.room=j.room;ST.view=j.view;
-      if(j.isHost){show('table');$('tCode').textContent=ST.code;}
+      ST.isHost=j.isHost;ST.you=j.you;ST.room=j.room;ST.view=j.view;ST.role=(saved.role==='dealer')?'dealer':'';
+      if(ST.role==='dealer'){show('dealer');$('dCode').textContent='卓 '+ST.code;}
+      else if(j.isHost){show('table');$('tCode').textContent=ST.code;}
       else{show('phone');$('pCode').textContent='卓 '+ST.code;}
       render();poll();
     }).catch(function(){});
