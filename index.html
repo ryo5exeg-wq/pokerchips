@@ -663,7 +663,7 @@ function sendRaise(){
   var q=new URLSearchParams(location.search);
   var joinCode=(q.get('r')||'').toUpperCase();
   $('inSrv').value=q.get('s')||saved.srv||DEFAULT_SRV;
-  if(joinCode)$('inCode').value=joinCode;
+  if(joinCode){$('inCode').value=joinCode;$('inCodeD').value=joinCode;}
   $('inName').value=joinCode?'':(saved.nm||'');
   if(saved.srv&&saved.code&&saved.pid&&(!joinCode||joinCode===saved.code)){
     ST.srv=saved.srv;ST.code=saved.code;ST.pid=saved.pid;
